@@ -139,35 +139,18 @@ To counter this problem, we have implemented a phased deployment approach across
 
 **Note**: We haven't pushed any changes to the code of the `coffee-project` apart from integrating `Jest` (for testing and code coverage) and `Eslint` (for lint test). These required changes to `package.json` as well, however, the application code was left untouched.
 
-* After the `Ansible lint` and `code lint` is satisfied, the `central server` (emulating cloud storage) is [configured](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/central_server/ansible/playbooks/central-server.yaml) using Ansible and Docker. Its [code](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/central_server/code/app.js) creates an `HTTP server` on port `8080`, which accepts `POST` and `GET` requests. The `build server` would use the `POST` request to upload artifacts to the `central server`, while the `preprod`, `QA`, and `prod-*` servers would use `GET` request to get the artifacts. The final deployment workflow
-* After the `central server` is configured, the [configuration](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/build_server/ansible/playbooks/build-server.yaml) of `build server` starts, which includes pulling the code and saving it in a zipped file on its local disk. Its [code](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/build_server/code/app.js) reads the zipped artifacts from the local disk, and uses an HTTP client to upload it to the central server.
-* This is followed by the [configuration](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/qa_server/ansible/playbooks/qa-server.yaml) of the `QA server`. Its [code](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/qa_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and prepared for testing by Ansible.
-* After this, the `preprod server` is [configured](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/preprod_server/ansible/playbooks/preprod-server.yaml). Its [code](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/preprod_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and prepared for testing by Ansible.
-* This triggers the `phased deployment`. The `prod1 server` is [configured](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/prod1_server/ansible/playbooks/prod1-server.yaml) first. Its [code](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/prod1_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and exposed to the users in region handled by prod-1 phase.
-* Following this, the `prod2 server` is [configured](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/prod2_server/ansible/playbooks/prod2-server.yaml). Its [code](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/prod2_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and exposed to the users in region handled by prod-2 phase.
-* Finally, the `prod3 server` is [configured](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/prod3_server/ansible/playbooks/prod3-server.yaml). Its [code](https://github.ncsu.edu/CSC-519-Project/DevOps-project/blob/main/config/prod3_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and exposed to the users in region handled by prod-3 phase.
+* After the `Ansible lint` and `code lint` is satisfied, the `central server` (emulating cloud storage) is [configured](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/ansible/playbooks/central-server.yaml) using Ansible and Docker. Its [code](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/code/app.js) creates an `HTTP server` on port `8080`, which accepts `POST` and `GET` requests. The `build server` would use the `POST` request to upload artifacts to the `central server`, while the `preprod`, `QA`, and `prod-*` servers would use `GET` request to get the artifacts. The final deployment workflow
+* After the `central server` is configured, the [configuration](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/ansible/playbooks/build-server.yaml) of `build server` starts, which includes pulling the code and saving it in a zipped file on its local disk. Its [code](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/build_server/code/app.js) reads the zipped artifacts from the local disk, and uses an HTTP client to upload it to the central server.
+* This is followed by the [configuration](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/ansible/playbooks//qa-server.yaml) of the `QA server`. Its [code](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/qa_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and prepared for testing by Ansible.
+* After this, the `preprod server` is [configured](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/ansible/playbooks/preprod-server.yaml). Its [code](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/preprod_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and prepared for testing by Ansible.
+* This triggers the `phased deployment`. The `prod1 server` is [configured](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/ansible/playbooks/prod1-server.yaml) first. Its [code](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/prod1_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and exposed to the users in region handled by prod-1 phase.
+* Following this, the `prod2 server` is [configured](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/ansible/playbooks/prod2-server.yaml). Its [code](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/prod2_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and exposed to the users in region handled by prod-2 phase.
+* Finally, the `prod3 server` is [configured](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/central_server/ansible/playbooks/prod3-server.yaml). Its [code](https://github.com/agupta15k/Custom-DevOps-Pipeline/blob/main/config/prod3_server/code/app.js) uses an HTTP client to get the zipped artifacts from the central server, which is then unzipped and exposed to the users in region handled by prod-3 phase.
 
 ### Sample deployment output
 
 <img width="805" alt="image" src="https://media.github.ncsu.edu/user/26492/files/1b4ccaf4-5afe-4d26-8b35-b4f62346b7ba">
 
-### Releases
-
-All the releases (along with the latest) for the project can be found [here](https://github.ncsu.edu/CSC-519-Project/DevOps-project/releases).
-
 ### Environments
 
-GitHub Environments for the pipeline can be found [here](https://github.ncsu.edu/CSC-519-Project/DevOps-project/settings/environments).
-
-### Environment Deployments
-
-The deployment status in the GitHub Environments can be found [here](https://github.ncsu.edu/CSC-519-Project/DevOps-project/deployments).
-
-### PRs and Issues
-
-Issues and PRs involved in the project development can be found [here](https://github.ncsu.edu/CSC-519-Project/DevOps-project/issues?q=is%3Aissue+is%3Aclosed) and [here](https://github.ncsu.edu/CSC-519-Project/DevOps-project/pulls?q=is%3Apr+is%3Aclosed).
-
-### Contributors ✨
-
-* Aastha Singh (asingh59)
-* Akash Gupta (agupta57)
+GitHub Environments for the pipeline can be found [here](https://github.com/agupta15k/Custom-DevOps-Pipeline/settings/environments).
