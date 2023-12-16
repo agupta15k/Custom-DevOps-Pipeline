@@ -1,0 +1,23 @@
+---
+profile: production
+
+exclude_paths:
+  - .cache/
+  - "**/ansible/hosts.yaml"
+
+strict: true
+
+verbosity: 1
+
+use_default_rules: true
+
+enable_list:
+  - args
+  - empty-string-compare
+  - no-log-password
+  - no-same-owner
+
+offline: true
+
+kinds:
+  - playbook: "**/ansible/playbooks/*.{yml,yaml}"

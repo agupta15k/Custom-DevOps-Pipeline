@@ -1,0 +1,60 @@
+---
+- name: Configure central server
+  hosts: centralserver
+  become: true
+  become_method: sudo
+  vars:
+    ansible_ssh_private_key_file: ~/.ssh/devops
+  tasks:
+    - name: Expose port 8080 with iptables
+      command: iptables -I INPUT -p tcp -m tcp --dport 8080 -j ACCEPT
+      changed_when: true
+
+    - name: Update APT package cache
+      apt:
+        update_cache: true
+      register: updatecacheresult
+      until: updatecacheresult is not failed
+      retries: 5
+      delay: 5
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Install Python Docker library
+      apt:
+        name: python3-docker
+        state: present
+
+    - name: Pull Node.js Docker image
+      docker_image:
+        name: node:latest
+        state: present
+
+    - name: Clone the private repository
+      git:
+        repo: https://{{ github_token }}@github.ncsu.edu/CSC-519-Project/DevOps-project.git
+        dest: ./project
+        accept_hostkey: true
+        version: "{{ git_branch }}"
+
+    - name: Run Node.js app Docker container
+      docker_container:
+        name: central_server_nodejs_container
+        image: node:latest
+        state: started
+        ports:
+          - "8080:8080"
+        volumes:
+          - "./project/config/central_server/code:/code"
+        working_dir: /code
+        command: npm run start

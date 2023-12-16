@@ -1,0 +1,62 @@
+---
+- name: Configure build server
+  hosts: buildserver
+  become: true
+  become_method: sudo
+  vars:
+    ansible_ssh_private_key_file: ~/.ssh/devops
+  tasks:
+    - name: Update APT package cache
+      apt:
+        update_cache: true
+      register: updatecacheresult
+      until: updatecacheresult is not failed
+      retries: 5
+      delay: 5
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+        update_cache: true
+
+    - name: Ensure Docker service is running
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Install Python Docker library
+      apt:
+        name: python3-docker
+        state: present
+
+    - name: Pull alpine Docker image
+      docker_image:
+        name: alpine:latest
+        state: present
+
+    - name: Clone the private repository
+      git:
+        repo: https://{{ github_token }}@github.ncsu.edu/CSC-519-Project/DevOps-project.git
+        dest: ./project
+        accept_hostkey: true
+        version: "{{ git_branch }}"
+
+    - name: Run Node.js app Docker container
+      docker_container:
+        name: build_server_nodejs_container
+        image: alpine:latest
+        state: started
+        ports:
+          - "8080:8080"
+        volumes:
+          - "./project:/code"
+        working_dir: /code
+        command: >
+          sh -c "
+          apk add --no-cache nodejs npm zip ;
+          cd coffee-project ;
+          zip -r artifacts.zip app.js data.js package.json public ;
+          cd ../config/build_server/code ;
+          npm run start"

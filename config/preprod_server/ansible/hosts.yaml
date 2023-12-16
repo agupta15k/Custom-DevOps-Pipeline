@@ -1,0 +1,2 @@
+[preprodserver]
+152.7.177.156 ansible_user=agupta57 ansible_python_interpreter=/usr/bin/python3

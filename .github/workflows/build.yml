@@ -1,0 +1,243 @@
+name: Code build and deploy workflow
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  preBuild:
+    runs-on: self-hosted
+    name: Ansible Lint
+    strategy:
+      matrix:
+        node-version: [16.x]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Run ansible-lint
+        run: |
+          cd config || exit 1
+          ansible-lint -c ansible-lint-config.yml || exit 1
+
+      - name: Run eslint check build_server
+        run: |
+          cd config/build_server/code/ || exit 1
+          npm i || exit 1
+          npm run lint || exit 1
+
+      - name: Run eslint check central_server
+        run: |
+          cd config/central_server/code/ || exit 1
+          npm i || exit 1
+          npm run lint || exit 1
+
+      - name: Run eslint check preprod_server
+        run: |
+          cd config/preprod_server/code/ || exit 1
+          npm i || exit 1
+          npm run lint || exit 1
+
+      - name: Run eslint check prod1_server
+        run: |
+          cd config/prod1_server/code/ || exit 1
+          npm i || exit 1
+          npm run lint || exit 1
+
+      - name: Run eslint check prod2_server
+        run: |
+          cd config/prod2_server/code/ || exit 1
+          npm i || exit 1
+          npm run lint || exit 1
+
+      - name: Run eslint check prod3_server
+        run: |
+          cd config/prod3_server/code/ || exit 1
+          npm i || exit 1
+          npm run lint || exit 1
+
+      - name: Run eslint check qa_server
+        run: |
+          cd config/qa_server/code/ || exit 1
+          npm i || exit 1
+          npm run lint || exit 1
+
+  deployToCentral:
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [preBuild]
+    environment: Central_server
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/devops && chmod 600 ~/.ssh/devops
+
+      - name: Get Branch Name
+        id: branch_name
+        run: echo "::set-output name=branch::$(basename ${GITHUB_REF})"
+
+      - name: Run Ansible playbook on central server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          cd config/central_server/ansible
+          ansible-playbook -e "github_token=${{ secrets.DEVOPS_PROJECT_GITHUB_TOKEN }}" -e "git_branch=${{ steps.branch_name.outputs.branch }}" -i hosts.yaml playbooks/central-server.yaml
+
+  deployToBuild:
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [preBuild, deployToCentral]
+    environment: Build_server
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/devops && chmod 600 ~/.ssh/devops
+
+      - name: Get Branch Name
+        id: branch_name
+        run: echo "::set-output name=branch::$(basename ${GITHUB_REF})"
+
+      - name: Run Ansible playbook on build server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          cd config/build_server/ansible
+          ansible-playbook -e "github_token=${{ secrets.DEVOPS_PROJECT_GITHUB_TOKEN }}" -e "git_branch=${{ steps.branch_name.outputs.branch }}" -i hosts.yaml playbooks/build-server.yaml
+
+  deployToQa:
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [preBuild, deployToCentral, deployToBuild]
+    environment: QA
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/devops && chmod 600 ~/.ssh/devops
+
+      - name: Get Branch Name
+        id: branch_name
+        run: echo "::set-output name=branch::$(basename ${GITHUB_REF})"
+
+      - name: Run Ansible playbook on qa server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          cd config/qa_server/ansible
+          ansible-playbook -e "github_token=${{ secrets.DEVOPS_PROJECT_GITHUB_TOKEN }}" -e "git_branch=${{ steps.branch_name.outputs.branch }}" -i hosts.yaml playbooks/qa-server.yaml
+
+  deployToPreprod:
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [preBuild, deployToCentral, deployToBuild, deployToQa]
+    environment: Preprod
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/devops && chmod 600 ~/.ssh/devops
+
+      - name: Get Branch Name
+        id: branch_name
+        run: echo "::set-output name=branch::$(basename ${GITHUB_REF})"
+
+      - name: Run Ansible playbook on preprod server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          cd config/preprod_server/ansible
+          ansible-playbook -e "github_token=${{ secrets.DEVOPS_PROJECT_GITHUB_TOKEN }}" -e "git_branch=${{ steps.branch_name.outputs.branch }}" -i hosts.yaml playbooks/preprod-server.yaml
+
+  deployToProd1:
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [preBuild, deployToCentral, deployToBuild, deployToQa, deployToPreprod]
+    environment: Prod1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/devops && chmod 600 ~/.ssh/devops
+
+      - name: Get Branch Name
+        id: branch_name
+        run: echo "::set-output name=branch::$(basename ${GITHUB_REF})"
+
+      - name: Run Ansible playbook on prod1 server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          cd config/prod1_server/ansible
+          ansible-playbook -e "github_token=${{ secrets.DEVOPS_PROJECT_GITHUB_TOKEN }}" -e "git_branch=${{ steps.branch_name.outputs.branch }}" -i hosts.yaml playbooks/prod1-server.yaml
+
+  deployToProd2:
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [preBuild, deployToCentral, deployToBuild, deployToQa, deployToPreprod, deployToProd1]
+    environment: Prod2
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/devops && chmod 600 ~/.ssh/devops
+
+      - name: Get Branch Name
+        id: branch_name
+        run: echo "::set-output name=branch::$(basename ${GITHUB_REF})"
+
+      - name: Run Ansible playbook on prod2 server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          cd config/prod2_server/ansible
+          ansible-playbook -e "github_token=${{ secrets.DEVOPS_PROJECT_GITHUB_TOKEN }}" -e "git_branch=${{ steps.branch_name.outputs.branch }}" -i hosts.yaml playbooks/prod2-server.yaml
+
+  deployToProd3:
+    runs-on: self-hosted
+    if: ${{ always() }}
+    needs: [preBuild, deployToCentral, deployToBuild, deployToQa, deployToPreprod, deployToProd1, deployToProd2]
+    environment: Prod3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Retrieve SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/devops && chmod 600 ~/.ssh/devops
+
+      - name: Get Branch Name
+        id: branch_name
+        run: echo "::set-output name=branch::$(basename ${GITHUB_REF})"
+
+      - name: Run Ansible playbook on prod3 server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: false
+        run: |
+          cd config/prod3_server/ansible
+          ansible-playbook -e "github_token=${{ secrets.DEVOPS_PROJECT_GITHUB_TOKEN }}" -e "git_branch=${{ steps.branch_name.outputs.branch }}" -i hosts.yaml playbooks/prod3-server.yaml

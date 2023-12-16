@@ -1,0 +1,2 @@
+[prod1server]
+152.7.176.215 ansible_user=asingh59 ansible_python_interpreter=/usr/bin/python3

@@ -1,0 +1,2 @@
+[qaserver]
+152.7.177.125 ansible_user=asingh59 ansible_python_interpreter=/usr/bin/python3

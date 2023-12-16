@@ -1,0 +1,2 @@
+[centralserver]
+152.7.178.254 ansible_user=agupta57 ansible_python_interpreter=/usr/bin/python3
